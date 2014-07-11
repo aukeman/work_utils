@@ -37,7 +37,8 @@ for dir in $(find ~/git -type d -mindepth 1 -maxdepth 1); do
       echo -en ${cr}
       echo $(basename ${dir}) \($(git branch | grep "^\*" | cut -c3-)\)
 
-      if [[ -n ${branch} ]]; then
+      if [[ -n ${branch} ]] && 
+         (( 1 < $(git branch --list | grep ${branch} | wc -l) )); then
         git branch --list | grep ${branch}
 	echo
       fi 
