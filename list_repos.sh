@@ -31,7 +31,7 @@ while getopts "hdsub:r:" opt; do
     r) remote=${OPTARG}; diff=true;;
     u) remote='@{u}'; diff=true;;
     h) echo "$USAGE"; exit 0;;
-    *) echo "$USAGE" >&2; exit 1;;
+    *) echo "Unknown option ${opt}"; echo "$USAGE" >&2; exit 1;;
   esac
 done
 
