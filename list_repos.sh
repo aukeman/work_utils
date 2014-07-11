@@ -3,13 +3,16 @@
 terminal=false
 full=false
 branch=
+remote=origin/master
 
 spinner=( '|' '/' '-' '\' ) 
 
-while getopts "hfb:" opt; do
+while getopts "hfub:r:" opt; do
   case ${opt} in
     f) full=true;;
     b) branch=${OPTARG};;
+    r) remote=${OPTARG};;
+    u) remote='@{u}';;
     h) echo "TODO"; exit 0;;
   esac
 done
@@ -26,10 +29,8 @@ for dir in $(find ~/git -type d -mindepth 1 -maxdepth 1); do
 
     pushd ${dir} >/dev/null
 
-    
-
     if ( [[ -n ${branch} ]] && git branch --list | grep --quiet ${branch} ) ||
-       ( [[ -z ${branch} ]] && ! git diff --quiet master ); then
+       ( [[ -z ${branch} ]] && git branch --list --remote | grep --quiet ${remote} && ! git diff --quiet ${remote}.. ); then
       echo -en ${cr}
       echo $(basename ${dir})
 
