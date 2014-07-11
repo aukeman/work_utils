@@ -1,15 +1,17 @@
 #!/bin/bash
 
 terminal=false
-full=false
+status=false
+diff=false
 branch=
 remote=origin/master
 
 spinner=( '|' '/' '-' '\' ) 
 
-while getopts "hfub:r:" opt; do
+while getopts "hdsub:r:" opt; do
   case ${opt} in
-    f) full=true;;
+    d) diff=true;;
+    s) status=true;;
     b) branch=${OPTARG};;
     r) remote=${OPTARG};;
     u) remote='@{u}';;
@@ -29,12 +31,18 @@ for dir in $(find ~/git -type d -mindepth 1 -maxdepth 1); do
 
     pushd ${dir} >/dev/null
 
-    if ( [[ -n ${branch} ]] && git branch --list | grep --quiet ${branch} ) ||
+    if ( ! ${diff} && [[ -z ${branch} ]] ) ||
+       ( [[ -n ${branch} ]] && git branch --list | grep --quiet ${branch} ) ||
        ( [[ -z ${branch} ]] && git branch --list --remote | grep --quiet ${remote} && ! git diff --quiet ${remote}.. ); then
       echo -en ${cr}
-      echo $(basename ${dir})
+      echo $(basename ${dir}) \($(git branch | grep "^\*" | cut -c3-)\)
 
-      if ${full}; then
+      if [[ -n ${branch} ]]; then
+        git branch --list | grep ${branch}
+	echo
+      fi 
+
+      if ${status}; then
         git status -sb
         echo 
       fi
