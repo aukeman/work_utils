@@ -7,13 +7,14 @@ status=false
 diff=false
 branch=
 remote=origin/master
+pull=false
 
 spinner=( '|' '/' '-' '\' ) 
 
 USAGE="Perform various queries of git repositories under \$GIT_REPO_ROOT.
 
 Usage:
-  $(basename ${0}) [-s] [-c | [-d | -u | -r <remote branch>] | -b <branch name pattern>] | -h
+  $(basename ${0}) [-s] [-c | [-d | -u | -r <remote branch>] | -b <branch name pattern>] | -p | -h
 
   -s: show status (git status -sb) for the repositories returned by the query
 
@@ -24,9 +25,11 @@ Usage:
   -r: show repositories with diffs between the current working branch and the given remote branch
 
   -b: show repositories with local or remote branches matching the given pattern
+  
+  -p: Pull repositories
 "
 
-while getopts "hcdsub:r:" opt; do
+while getopts "hcdsupb:r:" opt; do
   case ${opt} in
     d) diff=true;;
     c) uncommitted=true; list=true;;
@@ -34,6 +37,7 @@ while getopts "hcdsub:r:" opt; do
     b) branch=${OPTARG};;
     r) remote=${OPTARG}; diff=true;;
     u) remote='@{u}'; diff=true;;
+	p) pull=true;;
     h) echo "$USAGE"; exit 0;;
     *) echo "Unknown option ${opt}"; echo "$USAGE" >&2; exit 1;;
   esac
@@ -74,12 +78,16 @@ for repo in $(find ${GIT_REPO_ROOT:-~/git/} -name .git -a -type d -mindepth 2 -m
     echo -en ${cr}
     echo $(basename ${dir}) \($(git branch | grep "^\*" | cut -c3-)\)
 
+	if ${pull}; then
+		git pull
+	fi
+	
     if [[ -n ${branch} ]] && 
        (( 1 < $(git branch --list --all | grep ${branch} | wc -l) )); then
       git branch --list --all | grep ${branch} | tr "*" " "
       echo
     fi 
-
+	
     if ${status}; then
       git status -sb
       echo 
