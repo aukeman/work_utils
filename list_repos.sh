@@ -8,15 +8,18 @@ diff=false
 branch=
 remote=origin/master
 pull=false
+log=true
 
 spinner=( '|' '/' '-' '\' ) 
 
 USAGE="Perform various queries of git repositories under \$GIT_REPO_ROOT.
 
 Usage:
-  $(basename ${0}) [-s] [-c | [-d | -u | -r <remote branch>] | -b <branch name pattern>] | -p | -h
+  $(basename ${0}) [-s] [-p] [-c | [-d | -u | -r <remote branch>] | -b <branch name pattern> | -l <log filter> ] | -h
 
   -s: show status (git status -sb) for the repositories returned by the query
+
+  -p: pull repositories
 
   -c: show repositories with uncommitted changes
 
@@ -26,10 +29,10 @@ Usage:
 
   -b: show repositories with local or remote branches matching the given pattern
   
-  -p: Pull repositories
+  -l: show logs, filtered by optional input 
 "
 
-while getopts "hcdsupb:r:" opt; do
+while getopts "hcdsupb:r:l:" opt; do
   case ${opt} in
     d) diff=true;;
     c) uncommitted=true; list=true;;
@@ -38,6 +41,7 @@ while getopts "hcdsupb:r:" opt; do
     r) remote=${OPTARG}; diff=true;;
     u) remote='@{u}'; diff=true;;
 	p) pull=true;;
+	l) log=true; log_filter=${OPTARG};;
     h) echo "$USAGE"; exit 0;;
     *) echo "Unknown option ${opt}"; echo "$USAGE" >&2; exit 1;;
   esac
@@ -86,7 +90,10 @@ for repo in $(find ${GIT_REPO_ROOT:-~/git/} -name .git -a -type d -mindepth 2 -m
        (( 1 < $(git branch --list --all | grep ${branch} | wc -l) )); then
       git branch --list --all | grep ${branch} | tr "*" " "
       echo
-    fi 
+    elif ${log}; then
+		git log ${log_filter} 2>/dev/null | cat
+		echo
+	fi
 	
     if ${status}; then
       git status -sb
