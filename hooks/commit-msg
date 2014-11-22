@@ -1,29 +1,17 @@
 #!/bin/bash
 
-PIVOTAL_PROJECT_ID="985502"
-PIVOTAL_TOKEN="5d089c9f3dc01c734dece727cc65e513";
+. .git/hooks/fightclub_git_plugin/common.sh
 
-pivotal_card_number=$(head -1 $1 | sed -e 's/^[[({]\{0,1\}#\{0,1\}\([0-9]*\).*/\1/')
 
-if [[ -z ${pivotal_card_number} ]]; then
+if ! does_pivotal_card_number_begin_commit_message_file "${1}"; then
 	echo "Associated Pivotal Card Number has not been given.  What the Facebook?" 
 	exit 1
 fi
 
 echo -n "checking for card number ${pivotal_card_number} in pivotal..."
-http_response=$(curl -s -I -H "X-TrackerToken: $PIVOTAL_TOKEN" "https://www.pivotaltracker.com/services/v5/projects/${PIVOTAL_PROJECT_ID}/stories/${pivotal_card_number}" 2>&1)
 
-if [[ "$?" != "0" ]]; then
-	echo "could not connect to pivotal API" >&2
-	exit 1
-elif $(echo "${http_response}" | head -1 | grep -iq "200 OK"); then
+if confirm_pivotal_card_number_exists $(get_pivotal_card_number_from_commit_message_file); then
 	echo "ok"
-elif $(echo "${http_response}" | head -1 | grep -iq "404 Not Found"); then	
-	echo "not found!" >&2
-	exit 1
 else
-	echo -e "Unexpected response from pivotal:\n${http_response}" >&2
-	exit 1
+	exit 1;
 fi
-	
-  
