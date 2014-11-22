@@ -91,9 +91,25 @@ function get_pivotal_card_number_from_branch()
 	get_pivotal_card_number_from_string "$(get_branch_name)"
 }
 
+function get_pivotal_card_number_from_log()
+{
+	git log -10 --format="%s" | 
+	(while read title; do
+		if does_pivotal_card_number_begin_string "${title}"; then
+			get_pivotal_card_number_from_string "${title}"
+			break
+		fi
+	done)
+}
+
 function build_source_commit_json
 {
 	ruby -e 'require "json"; puts Hash[[ ["source_commit", Hash[[ ["commit_id", ARGV[0]], ["message", ARGV[1]], ["author", ARGV[2]] ]] ] ]].to_json' -- "${1}" "${2}" "${3}"
+}
+
+function build_story_comment_json
+{
+	ruby -e 'require "json"; puts Hash[[ ["text", ARGV[0]] ]].to_json' -- "${1}"
 }
 
 function confirm_pivotal_card_exists()
@@ -134,5 +150,23 @@ $(get_changed_files | sed -e 's/^\([A-Z]\)\(.*\)/**\1**\2/')"
 	if [[ "${http_code}" != "200" ]]; then
 		echo "Could not update Pivotal Card" >&2
 	fi
+}
+
+function update_pivotal_card_with_push
+{
+	message="Push to ${2}
+	
+**Repo:** $(get_repo_name)
+**Branch:** $(get_branch_name)
+**Hash:** $(get_commit_short_hash)"
+
+	comment_json=$(build_story_comment_json "${message}")
+	
+	http_code=$(curl -s -X POST -H "X-TrackerToken: $PIVOTAL_TOKEN" -H "Content-Type: application/json" -d "${comment_json}" -o /dev/null -w "%{http_code}" "https://www.pivotaltracker.com/services/v5/projects/${PIVOTAL_PROJECT_ID}/stories/${1}/comments")
+	
+	if [[ "${http_code}" != "200" ]]; then
+		echo "Could not update Pivotal Card" >&2
+	fi
+	
 }
 
