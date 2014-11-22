@@ -66,6 +66,11 @@ function does_pivotal_card_number_begin_string()
 	ruby -e 'if not ARGV[0] =~ /^#{ARGV[1]}/; then exit 1; end' -- "${1}" "${OPTIONAL_NUMBER_MARKER_REGEX}${PIVOTAL_CARD_NUMBER_REGEX}"
 }
 
+function formatted_pivotal_card_number_in_commit_message_file
+{
+	ruby -e 'if not ARGV[0] =~ /#{ARGV[1]}/; then exit 1; end' -- "$(head -1 ${1} 2>/dev/null)" "\\[#${PIVOTAL_CARD_NUMBER_REGEX}\\]"
+}
+
 function get_pivotal_card_number_from_string()
 {
 	ruby -e 'ARGV[0] =~ /(#{ARGV[1]})/; print $1' -- "${1}" "${PIVOTAL_CARD_NUMBER_REGEX}"
@@ -100,6 +105,11 @@ function get_pivotal_card_number_from_log()
 			break
 		fi
 	done)
+}
+
+function ensure_pivotal_card_number_is_formatted()
+{
+	sed -i -e 's/^\([0-9]\{8,\}\)/[#\1]/' "${1}"
 }
 
 function build_source_commit_json
