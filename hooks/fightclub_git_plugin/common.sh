@@ -21,9 +21,39 @@ function generate_error_message
 	echo "If you need to bypass the Fight Club git hooks, run this command again and pass the --no-verify option."
 }
 
+function get_git_user_name
+{
+	git config user.name
+}
+
+function get_repo_name()
+{
+	basename $(git rev-parse --show-toplevel)
+}
+
 function get_branch_name()
 {
 	git symbolic-ref HEAD | awk -F/ '{print $NF}'
+}
+
+function get_commit_hash()
+{
+	git log -1 --format="%H"
+}
+
+function get_commit_short_hash()
+{
+	git log -1 --format="%h"
+}
+
+function get_commit_title()
+{
+	git log -1 --format="%s" HEAD
+}
+
+function get_changed_files()
+{
+	git diff --name-status HEAD~1
 }
 
 function is_pivotal_card_number_in_string()
@@ -61,26 +91,48 @@ function get_pivotal_card_number_from_branch()
 	get_pivotal_card_number_from_string "$(get_branch_name)"
 }
 
-function confirm_pivotal_card_exists()
+function build_source_commit_json
 {
-	http_response=$(curl -s -I -H "X-TrackerToken: ${PIVOTAL_TOKEN}" "https://www.pivotaltracker.com/services/v5/projects/${PIVOTAL_PROJECT_ID}/stories/${1}" 2>&1)
-
-	if [[ "$?" != "0" ]]; then
-		echo "could not connect to pivotal API" >&2
-		false
-
-	elif $(echo "${http_response}" | head -1 | grep -iq "200 OK"); then
-		true
-	
-	elif $(echo "${http_response}" | head -1 | grep -iq "404 Not Found"); then	
-		echo "pivotal card #${1} not found!" >&2
-		false
-	
-	else
-		echo -e "Unexpected response from pivotal:\n${http_response}" >&2
-		false
-	fi
+	ruby -e 'require "json"; puts Hash[[ ["source_commit", Hash[[ ["commit_id", ARGV[0]], ["message", ARGV[1]], ["author", ARGV[2]] ]] ] ]].to_json' -- "${1}" "${2}" "${3}"
 }
 
+function confirm_pivotal_card_exists()
+{
+	http_code=$(curl -s -I -H "X-TrackerToken: ${PIVOTAL_TOKEN}" -o dev/null -w "%{http_code}" "https://www.pivotaltracker.com/services/v5/projects/${PIVOTAL_PROJECT_ID}/stories/${1}" 2>&1)
 
+	result=false
+	
+	if [[ "$?" != "0" ]]; then
+		echo "could not connect to pivotal API" >&2
+	else
+		case "${http_code}" in
+			"200") result=true;;
+			"404") echo "pivotal card #${1} not found!" >&2;;
+			*)     echo "Unexpected http code from Pivotal: ${http_code}" >&2;;
+		esac
+	fi
+
+	${result}
+}
+
+function update_pivotal_card_with_commit
+{
+	commit_hash=$(get_commit_hash)
+	user_name=$(get_git_user_name)
+	message="$(get_commit_title)
+
+**Repo:** $(get_repo_name)
+**Branch:** $(get_branch_name)
+**Hash:** $(get_commit_short_hash)
+
+$(get_changed_files | sed -e 's/^\([A-Z]\)\(.*\)/**\1**\2/')"
+
+	source_commit_json=$(build_source_commit_json "${hash}" "${message}" "${user_name}")
+	
+	http_code=$(curl -s -X POST -H "X-TrackerToken: $PIVOTAL_TOKEN" -H "Content-Type: application/json" -d "${source_commit_json}" -o /dev/null -w "%{http_code}" "https://www.pivotaltracker.com/services/v5/source_commits")
+	
+	if [[ "${http_code}" != "200" ]]; then
+		echo "Could not update Pivotal Card" >&2
+	fi
+}
 

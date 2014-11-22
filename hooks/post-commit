@@ -1,0 +1,5 @@
+#!/bin/bash
+
+. "${FIGHTCLUB_GIT_PLUGIN_HOME}"/common.sh
+
+update_pivotal_card_with_commit
