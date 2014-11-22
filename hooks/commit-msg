@@ -1,6 +1,7 @@
 #!/bin/bash
 
-. .git/hooks/fightclub_git_plugin/common.sh
+. "${FIGHTCLUB_GIT_PLUGIN_HOME}"/common.sh
+
 
 if ! does_pivotal_card_number_begin_commit_message_file "${1}"; then
 	echo "What the Facebook?" >&2
