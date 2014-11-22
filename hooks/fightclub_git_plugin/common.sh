@@ -167,6 +167,25 @@ function update_pivotal_card_with_push
 	if [[ "${http_code}" != "200" ]]; then
 		echo "Could not update Pivotal Card" >&2
 	fi
+}
+
+function update_pivotal_card_with_merge
+{
+	echo "pivotal card number: ${1}"
+
+	message="Merge
+	
+**Repo:** $(get_repo_name)
+**Branch:** $(get_branch_name)
+**Hash:** $(get_commit_short_hash)"
+
+	comment_json=$(build_story_comment_json "${message}")
+
+	http_code=$(curl -s -X POST -H "X-TrackerToken: $PIVOTAL_TOKEN" -H "Content-Type: application/json" -d "${comment_json}" -o /dev/null -w "%{http_code}" "https://www.pivotaltracker.com/services/v5/projects/${PIVOTAL_PROJECT_ID}/stories/${1}/comments")
+	
+	if [[ "${http_code}" != "200" ]]; then
+		echo "Could not update Pivotal Card" >&2
+	fi
 	
 }
 
