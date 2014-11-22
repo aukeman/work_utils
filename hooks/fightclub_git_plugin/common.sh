@@ -36,7 +36,7 @@ function does_pivotal_card_number_begin_string()
 function get_pivotal_card_number_from_string()
 {
 	if is_pivotal_card_number_in_string "${1}"; then
-		echo "${1}" | sed -e "s/.*\(${PIVOTAL_CARD_NUMBER_SED_REGEX}\).*/\1/"
+		echo "${1}" | sed -e "s/[^0-9]*\(${PIVOTAL_CARD_NUMBER_SED_REGEX}\).*/\1/"
 	else
 		echo
 	fi
@@ -62,7 +62,7 @@ function get_pivotal_card_number_from_branch()
 	get_pivotal_card_number_from_string "$(get_branch_name)"
 }
 
-function confirm_pivotal_card_number_exists()
+function confirm_pivotal_card_exists()
 {
 	http_response=$(curl -s -I -H "X-TrackerToken: ${PIVOTAL_TOKEN}" "https://www.pivotaltracker.com/services/v5/projects/${PIVOTAL_PROJECT_ID}/stories/${1}" 2>&1)
 
@@ -74,7 +74,7 @@ function confirm_pivotal_card_number_exists()
 		true
 	
 	elif $(echo "${http_response}" | head -1 | grep -iq "404 Not Found"); then	
-		echo "pivotal card #${pivotal_card_number} not found!" >&2
+		echo "pivotal card #${1} not found!" >&2
 		false
 	
 	else

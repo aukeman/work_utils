@@ -4,8 +4,8 @@
 
 if ! does_pivotal_card_number_begin_commit_message_file "${1}" && 
    is_pivotal_card_number_in_branch &&
-   confirm_pivotal_card_number_exists $(get_pivotal_card_number_from_branch); then
+   confirm_pivotal_card_exists "$(get_pivotal_card_number_from_branch)"; then
 
-	file_contents=$(cat ${1} 2>/dev/null)
+	file_contents=$(cat "${1}" 2>/dev/null)
 	echo "[#$(get_pivotal_card_number_from_branch)]: ${file_contents}" > ${1}
 fi
