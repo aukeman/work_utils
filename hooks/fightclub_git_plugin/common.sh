@@ -30,8 +30,6 @@ function is_pivotal_card_number_in_string()
 
 function does_pivotal_card_number_begin_string()
 {
-	echo ">>> $1 <<<"
-
 	echo "${1}" | egrep -q "^${OPTIONAL_NUMBER_MARKER_EGREP_REGEX}${PIVOTAL_CARD_NUMBER_EGREP_REGEX}"
 }
 
@@ -46,14 +44,12 @@ function get_pivotal_card_number_from_string()
 
 function get_pivotal_card_number_from_commit_message_file()
 {
-	get_pivotal_card_number_begin_string "$(head -1 \"${1}\" 2>/dev/null)"
+	get_pivotal_card_number_from_string "$(head -1 ${1} 2>/dev/null)"
 }
 
 function does_pivotal_card_number_begin_commit_message_file()
 {
-	echo "))) $(head -1 ${1} 2>/dev/null) ((("
-
-	does_pivotal_card_number_begin_string "$(head -1 \"${1}\" 2>/dev/null)"
+	does_pivotal_card_number_begin_string "$(head -1 ${1} 2>/dev/null)"
 }
 
 function is_pivotal_card_number_in_branch()
