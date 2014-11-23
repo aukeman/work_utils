@@ -1,16 +1,6 @@
 #!/bin/bash
 
-. "${FIGHTCLUB_GIT_PLUGIN_HOME}"/common.sh
+. "${FIGHTCLUB_GIT_PLUGIN_HOME}"/fightclub_git_plugin.sh
 
-pivotal_card_number=$(get_pivotal_card_number_from_branch)
+post_merge_hook "$@"
 
-if [[ -z ${pivotal_card_number} ]]; then
-	pivotal_card_number=$(get_pivotal_card_number_from_log)
-fi
-
-if [[ -z ${pivotal_card_number} ]] || ! confirm_pivotal_card_exists "${pivotal_card_number}"; then
-	echo "Unable to find pivotal card number; cannot update Pivotal Card" >&2
-	echo "Please update pivotal card manually" >&2
-else
-	update_pivotal_card_with_merge "${pivotal_card_number}"
-fi

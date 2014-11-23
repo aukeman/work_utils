@@ -185,6 +185,8 @@ function update_pivotal_card_with_merge
 
 	message="Merge
 	
+$(get_commit_title)
+	
 **Repo:** $(get_repo_name)
 **Branch:** $(get_branch_name)
 **Hash:** $(get_commit_short_hash)"
@@ -199,3 +201,79 @@ function update_pivotal_card_with_merge
 	
 }
 
+function prepare_commit_message_hook()
+{
+	ensure_pivotal_card_number_is_formatted "${1}"
+
+	if ! does_pivotal_card_number_begin_commit_message_file "${1}" && 
+	   is_pivotal_card_number_in_branch &&
+	   confirm_pivotal_card_exists "$(get_pivotal_card_number_from_branch)"; then
+
+		file_contents=$(cat "${1}" 2>/dev/null)
+		echo "[#$(get_pivotal_card_number_from_branch)] ${file_contents}" > "${1}"
+	fi
+}
+
+function commit_message_hook()
+{
+	if ! does_pivotal_card_number_begin_commit_message_file "${1}"; then
+		echo "What the Facebook?" >&2
+		echo "Commit message must start with the associated pivotal card number." >&2
+		echo "$(generate_error_message 'commit')" >&2
+		exit 1
+	fi
+
+	pivotal_card_number=$(get_pivotal_card_number_from_commit_message_file "${1}")
+
+	echo -n "Checking that card number ${pivotal_card_number} exists in pivotal..."
+
+	if confirm_pivotal_card_exists "${pivotal_card_number}"; then
+		echo "ok"
+	else
+		echo "$(generate_error_message 'commit')" >&2
+		exit 1;
+	fi
+}
+
+function post_commit_hook()
+{
+	update_pivotal_card_with_commit
+}
+
+function pre_push_hook()
+{
+	pivotal_card_number=$(get_pivotal_card_number_from_branch)
+
+	if [[ -z ${pivotal_card_number} ]]; then
+		pivotal_card_number=$(get_pivotal_card_number_from_log)
+	fi
+
+	if [[ -z ${pivotal_card_number} ]]; then
+		echo "Unable to find pivotal card number; cannot update Pivotal Card" >&2
+		echo "$(generate_error_message 'push')" >&2
+		exit 1
+
+	elif ! confirm_pivotal_card_exists "${pivotal_card_number}"; then
+		echo "$(generate_error_message 'push')" >&2
+		exit 1
+	else
+
+		update_pivotal_card_with_push "${pivotal_card_number}" "${1}"
+	fi
+}
+
+function post_merge_hook()
+{
+	pivotal_card_number=$(get_pivotal_card_number_from_branch)
+
+	if [[ -z ${pivotal_card_number} ]]; then
+		pivotal_card_number=$(get_pivotal_card_number_from_log)
+	fi
+
+	if [[ -z ${pivotal_card_number} ]] || ! confirm_pivotal_card_exists "${pivotal_card_number}"; then
+		echo "Unable to find pivotal card number; cannot update Pivotal Card" >&2
+		echo "Please update pivotal card manually" >&2
+	else
+		update_pivotal_card_with_merge "${pivotal_card_number}"
+	fi
+}

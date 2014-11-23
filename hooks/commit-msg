@@ -1,22 +1,5 @@
 #!/bin/bash
 
-. "${FIGHTCLUB_GIT_PLUGIN_HOME}"/common.sh
+. "${FIGHTCLUB_GIT_PLUGIN_HOME}"/fightclub_git_plugin.sh
 
-
-if ! does_pivotal_card_number_begin_commit_message_file "${1}"; then
-	echo "What the Facebook?" >&2
-	echo "Commit message must start with the associated pivotal card number." >&2
-	echo "$(generate_error_message 'commit')" >&2
-	exit 1
-fi
-
-pivotal_card_number=$(get_pivotal_card_number_from_commit_message_file "${1}")
-
-echo -n "Checking that card number ${pivotal_card_number} exists in pivotal..."
-
-if confirm_pivotal_card_exists "${pivotal_card_number}"; then
-	echo "ok"
-else
-	echo "$(generate_error_message 'commit')" >&2
-	exit 1;
-fi
+commit_message_hook "$@"

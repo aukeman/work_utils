@@ -1,22 +1,5 @@
 #!/bin/bash
 
-. "${FIGHTCLUB_GIT_PLUGIN_HOME}"/common.sh
+. "${FIGHTCLUB_GIT_PLUGIN_HOME}"/fightclub_git_plugin.sh
 
-pivotal_card_number=$(get_pivotal_card_number_from_branch)
-
-if [[ -z ${pivotal_card_number} ]]; then
-	pivotal_card_number=$(get_pivotal_card_number_from_log)
-fi
-
-if [[ -z ${pivotal_card_number} ]]; then
-	echo "Unable to find pivotal card number; cannot update Pivotal Card" >&2
-	echo "$(generate_error_message 'push')" >&2
-	exit 1
-
-elif ! confirm_pivotal_card_exists "${pivotal_card_number}"; then
-	echo "$(generate_error_message 'push')" >&2
-	exit 1
-else
-
-	update_pivotal_card_with_push "${pivotal_card_number}" "${1}"
-fi
+pre_push_hook "$@"
